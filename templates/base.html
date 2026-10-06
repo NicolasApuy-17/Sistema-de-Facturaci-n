@@ -1,0 +1,15 @@
+{% load static %}<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Control Empresa{% endblock %}</title><link rel="stylesheet" href="{% static 'app.css' %}"><link rel="stylesheet" href="{% static 'operations.css' %}"></head>
+<body><aside class="sidebar"><a class="brand" href="/">CE<span>Control Empresa<small>GESTIÓN LOCAL</small></span></a>
+<div class="nav-label">ADMINISTRACIÓN</div><nav>
+<a class="{% if section == 'inicio' %}active{% endif %}" href="/">◫ <span>Resumen</span></a>
+<a class="{% if section == 'comprobantes' %}active{% endif %}" href="/comprobantes/">▤ <span>Ventas y comprobantes</span></a>
+<a class="{% if section == 'guias' %}active{% endif %}" href="/guias/">⇄ <span>Guías de remisión</span></a>
+<a class="{% if section == 'inventario' %}active{% endif %}" href="/inventario/">▦ <span>Inventario</span></a>
+<a class="{% if section == 'clientes' %}active{% endif %}" href="/clientes/">◎ <span>Clientes y cuentas</span></a>
+<a class="{% if section == 'configuracion' %}active{% endif %}" href="/configuracion/">⚙ <span>Configuración</span></a></nav>
+<div class="sidebar-bottom"><span class="status-dot"></span> Entorno local <small>Datos en tu computadora</small></div></aside>
+<div class="workspace"><header><span>Panel de administración</span><div><span class="avatar">{{ user.username|first|upper }}</span> {{ user.username }}<form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="text-button">Salir</button></form></div></header>
+<main>{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
+<footer>Control Empresa · Desarrollo local <span>Integración SUNAT pendiente de configurar y validar</span></footer></div>
+{% block scripts %}{% endblock %}</body></html>

@@ -1,0 +1,5 @@
+Django==5.2.18
+psycopg[binary]==3.3.6
+waitress==3.0.2
+whitenoise==6.12.0
+lxml==6.0.2
