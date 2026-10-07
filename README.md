@@ -14,7 +14,7 @@ Sistema local para administradores de una empresa peruana. Django 5.2, PostgreSQ
 - Datos de empresa, auditoría y formatos para imprimir o guardar como PDF desde el navegador.
 - Asistentes gráficos para actualizar, respaldar y restaurar. Inicio por doble clic, sin consola de servidor abierta.
 
-**Todavía no es apto para emisión tributaria ni para operar el negocio en producción.** Los documentos e impresiones son internos. Ya se genera una vista previa XML UBL 2.1 para facturas, boletas y las notas admitidas. Falta completar las reglas SUNAT, firma, envío CPE/GRE, series definitivas, CDR, QR y conservación de archivos tributarios. Tampoco se calcula ICBPER ni están implementadas todas las afectaciones, percepciones o detracciones. El precio incluye IGV según la afectación seleccionada: gravado 18%, exonerado 0% o inafecto 0%. Debe existir fundamento para exoneración o inafectación; el uso alimenticio de una bolsa no implica IGV 0%. Los productos anteriores con porcentaje 0% migran como pendientes de clasificación, sin cambiar sus importes.
+**Todavía no es apto para emisión tributaria ni para operar el negocio en producción.** Los documentos e impresiones son internos. Ya se genera una vista previa XML UBL 2.1 para facturas, boletas y las notas admitidas. Las facturas al contado cuentan además con firma, envío beta y lectura/archivo de CDR de prueba. Falta completar las reglas SUNAT y los flujos de producción CPE/GRE, series definitivas, QR y archivo tributario definitivo. Tampoco se calcula ICBPER ni están implementadas todas las afectaciones, percepciones o detracciones. El precio incluye IGV según la afectación seleccionada: gravado 18%, exonerado 0% o inafecto 0%. Debe existir fundamento para exoneración o inafectación; el uso alimenticio de una bolsa no implica IGV 0%. Los productos anteriores con porcentaje 0% migran como pendientes de clasificación, sin cambiar sus importes.
 
 ## Actualizar esta instalación conservando datos
 
@@ -65,7 +65,7 @@ Fuentes oficiales: [CPE y manuales](https://cpe.sunat.gob.pe/guias-y-manuales), 
 
 ## Validación
 
-Se aprobaron 48 pruebas, incluidas generación de XML UBL para los cuatro tipos, clasificación tributaria y conservación de históricos: stock y pagos concurrentes, operaciones repetidas, edición e historial, notas y devoluciones, permisos, formularios, acceso, impresión y migración de registros de la primera versión. Se comprobó también instalación con usuario de base limitado, respaldo real, restauración en otra base, rechazo de archivos alterados y protección de auditoría.
+Se aprobaron 66 pruebas, incluidas firma digital, control de alteraciones, envío y CDR simulados, certificados PFX, generación de XML UBL para los cuatro tipos, clasificación tributaria y conservación de históricos: stock y pagos concurrentes, operaciones repetidas, edición e historial, notas y devoluciones, permisos, formularios, acceso, impresión y migración de registros de la primera versión. Se comprobó también instalación con usuario de base limitado, respaldo real, restauración en otra base, rechazo de archivos alterados y protección de auditoría.
 
 tools/test_postgres.py crea un clúster aislado en work/, ejecuta migraciones y pruebas y lo detiene al terminar. No utiliza ni modifica las bases reales. Requiere PostgreSQL 18; ejecutar con .venv\Scripts\python.exe tools\test_postgres.py. Estas pruebas no equivalen a aceptación SUNAT.
 
@@ -84,3 +84,43 @@ Las líneas nuevas guardan la afectación y el uso del producto; editarlo poster
 La validación local usa los XSD originales del estándar UBL 2.1 de [OASIS](https://docs.oasis-open.org/ubl/os-UBL-2.1/). Se incluyen en el código: no se descargan ni se requiere internet durante la generación. El ZIP publicado por SUNAT respondió HTTP 403 durante la preparación. La procedencia y los hashes de los esquemas están en core/fiscal/schemas/source.json. Cumplir el XSD verifica estructura, no firma digital ni aceptación o todas las reglas SUNAT.
 
 La Ley 30884 contempla supuestos de bolsas para alimentos a granel o por inocuidad. La selección refleja el uso real que se debe revisar; no basta con denominar un producto como alimenticio. [Explicación oficial del MINAM](https://www.gob.pe/institucion/minam/noticias/23826-gobierno-promulga-ley-n-30884que-regula-el-plastico-de-un-solo-uso-y-envases-descartables-a-nivel-nacional).
+
+
+## Facturas firmadas y envío SUNAT beta
+
+Esta etapa solo integra el envío individual de facturas al contado al entorno beta, mediante sendBill. Boletas, notas, GRE y ventas al crédito aún no tienen envío en esta entrega. La ruta de producción no existe en el cliente: el destino beta está fijo y se rechazan redirecciones. No se solicita Clave SOL; se usan las credenciales públicas del servicio beta documentadas por SUNAT.
+
+1. En esta computadora las bibliotecas nuevas ya están instaladas. Ejecuta Detener.cmd, Actualizar.cmd e Iniciar.cmd para aplicar la migración con respaldo previo.
+2. Completa la empresa y clasifica los productos. Crea un borrador de factura al contado con un cliente RUC. No registres una venta real adicional solo para hacer una prueba.
+3. En el detalle, pulsa Preparar / revisar factura beta. El sistema firma y conserva una sola versión del XML y el ZIP, con identificador provisional FPRV y sin reservar series reales.
+4. Revisa los archivos y los datos que se enviarán. En la pantalla beta, confirma el envío y pulsa Enviar prueba a SUNAT beta.
+5. Revisa código y descripción del resultado; descarga el XML firmado, el ZIP y el CDR beta recibido.
+
+Por defecto se genera una clave RSA de 2048 bits y un certificado de prueba en memoria. La clave privada se descarta después de firmar; no se almacena en la base. El certificado está incluido en el XML firmado. Su vigencia es de siete días y no tiene validez tributaria.
+
+Opcionalmente abre Configurar SUNAT beta.cmd y selecciona un certificado propio PFX/P12. Su contraseña se cifra con DPAPI para ese usuario Windows y la configuración se guarda con permisos restringidos en sunat.local.json. El archivo queda fuera de Git y de los respaldos de la base. El certificado debe ser RSA de al menos 2048 bits, estar vigente y contener el RUC de la empresa en OU. No envíes certificados o contraseñas por el chat. Este asistente tampoco activa producción.
+
+Preparar o enviar una prueba no registra la venta interna, no descuenta inventario y no altera el estado fiscal real. ACEPTADO en beta se muestra por separado. XML, ZIP, hash, huella del certificado, estado y CDR se conservan en PostgreSQL y entran en los respaldos.
+
+Un error SOAP no se interpreta como aceptación. Un fallo de conexión deja resultado incierto: puede que SUNAT haya recibido el archivo. Los reintentos se confirman explícitamente y reutilizan exactamente el mismo ZIP. Un error de duplicado tampoco confirma aceptación. Si Windows o la aplicación se cerraron durante el envío, se puede marcarlo como interrumpido después de tres minutos y revisarlo antes de reintentar. Se evita que dos solicitudes reclamen simultáneamente el mismo envío.
+
+El CDR beta se lee con límites de tamaño y validación de documento y RUC; no se verifica todavía su firma con una cadena de confianza SUNAT para producción. No hay consulta automática de CDR ni reintentos automáticos en este flujo beta. Una factura preparada queda fija; para corregir una prueba, crea otro borrador de prueba conservando el resultado anterior. Los datos enviados a beta incluyen empresa, cliente y productos: revisa antes de confirmar.
+
+Se probó una factura sintética con el RUC público usado en el manual, sin datos de la empresa ni conexión a su base. SUNAT beta devolvió código 0 y un CDR de aceptación. La prueba no equivale a habilitación o validación tributaria en producción.
+
+Fuentes: [pautas oficiales beta](https://orientacion.sunat.gob.pe/12-pautas-servicio-beta), [manual del programador SUNAT](https://cpe.sunat.gob.pe/sites/default/files/inline-files/manual_programador%20%281%29.pdf). No uses tools/beta_smoke.py para pruebas masivas: realiza un único envío sintético por ejecución.
+
+Al trasladar la aplicación, excluye también sunat.local.json y cualquier PFX/P12/PEM privado. Configura de nuevo el certificado con el usuario Windows del equipo de destino. En una instalación anterior fuera de esta computadora, actualiza sus dependencias con Instalar.cmd antes de aplicar las migraciones.
+
+
+## Compartir una demostración portable
+
+Se preparó un ZIP para Windows 10/11 de 64 bits con Python, PostgreSQL, dependencias, código, licencias y una guía de prueba. El destinatario extrae toda la carpeta y abre Iniciar demo.cmd; no necesita instalar herramientas ni conocer código. Usa demo / PruebaEmpresa-2026! únicamente en esta copia ficticia.
+
+La base se crea en data dentro de la demo, con puertos locales 55439 (PostgreSQL) y 18765 (aplicación). La ventana de inicio debe mantenerse abierta y permite cerrar el servidor y su clúster. No se instala un servicio Windows y no se modifican otras instalaciones PostgreSQL. La demo conserva las pruebas entre aperturas y muestra un aviso de demostración.
+
+Se comprobó con su runtime copiado el arranque independiente, migraciones, rol de aplicación limitado, datos ficticios, inicio de sesión, seis pantallas y preparación de firma beta. No se envió información del negocio ni se conectó a su base. El uso en el equipo destinatario aún debe comprobarse. PostgreSQL se lanza usando rutas cortas para evitar problemas con acentos; si esa computadora no admite rutas cortas y la ruta contiene acentos, la ventana indicará extraer en una ruta sin acentos.
+
+El paquete no contiene config.local.json, sunat.local.json, claves privadas, base del negocio ni la subcarpeta data usada en su verificación. Incluye el almacén público de certificados CA de certifi, que no contiene certificados privados del negocio. Evita compartir una carpeta de demo que ya se haya usado: comparte el ZIP original limpio.
+
+Construcción reproducible: tools/build_demo.py --output RUTA_ZIP, ejecutado con el Python del proyecto y PostgreSQL 18 instalado. tools/repack_demo.py permite actualizar los archivos del paquete generado y excluir los datos de su verificación. No conviertas esta copia en producción: prepara una instalación con usuarios, credenciales y datos propios.

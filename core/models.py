@@ -190,3 +190,22 @@ class AuditEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ['-id']
+
+class BetaSubmission(models.Model):
+    STATES = [('PREPARADO', 'Firmado para pruebas'), ('ENVIANDO', 'Enviando a beta'), ('ACEPTADO', 'Aceptado en beta'), ('RECHAZADO', 'Rechazado en beta'), ('ERROR', 'Error de servicio'), ('INCIERTO', 'Respuesta pendiente de comprobar')]
+    document = models.OneToOneField(Document, on_delete=models.PROTECT, related_name='beta_submission')
+    ruc = models.CharField(max_length=11)
+    filename = models.CharField(max_length=70)
+    signed_xml = models.BinaryField()
+    payload_zip = models.BinaryField()
+    sha256 = models.CharField(max_length=64)
+    demo_certificate = models.BooleanField(default=True)
+    certificate_fingerprint = models.CharField(max_length=64)
+    state = models.CharField(max_length=12, choices=STATES, default='PREPARADO')
+    attempts = models.PositiveIntegerField(default=0)
+    response_code = models.CharField(max_length=30, blank=True)
+    message = models.CharField(max_length=1000, blank=True)
+    cdr_zip = models.BinaryField(null=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_attempt_at = models.DateTimeField(null=True)

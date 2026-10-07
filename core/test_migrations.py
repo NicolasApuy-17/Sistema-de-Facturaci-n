@@ -24,7 +24,7 @@ class UpgradeTests(TransactionTestCase):
             movement = old.get_model('core', 'StockMovement').objects.create(product_id=product.pk, quantity=-2, balance=8,
                 reason='Venta anterior', document_id=document.pk, created_by_id=user.pk, request_key=uuid.uuid4())
             executor = MigrationExecutor(connection)
-            executor.migrate([('core', '0005_tax_classification')])
+            executor.migrate([('core', '0006_betasubmission')])
             from .models import Document, DocumentLine, Product, StockMovement
             migrated = Product.objects.get(pk=product.pk)
             self.assertEqual(migrated.stock, Decimal('8'))
@@ -40,4 +40,4 @@ class UpgradeTests(TransactionTestCase):
             self.assertEqual(DocumentLine.objects.get(pk=line.pk).tax_category, '10')
             self.assertEqual(DocumentLine.objects.get(pk=line.pk).package_use, 'PENDIENTE')
         finally:
-            MigrationExecutor(connection).migrate([('core', '0005_tax_classification')])
+            MigrationExecutor(connection).migrate([('core', '0006_betasubmission')])

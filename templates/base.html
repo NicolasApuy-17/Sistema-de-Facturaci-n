@@ -10,6 +10,6 @@
 <a class="{% if section == 'configuracion' %}active{% endif %}" href="/configuracion/">⚙ <span>Configuración</span></a></nav>
 <div class="sidebar-bottom"><span class="status-dot"></span> Entorno local <small>Datos en tu computadora</small></div></aside>
 <div class="workspace"><header><span>Panel de administración</span><div><span class="avatar">{{ user.username|first|upper }}</span> {{ user.username }}<form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="text-button">Salir</button></form></div></header>
-<main>{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
+<main>{% if demo_mode %}<div class="notice">DEMOSTRACIÓN · Datos ficticios. Usa esta copia para probar, no para registrar operaciones reales.</div>{% endif %}{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
 <footer>Control Empresa · Desarrollo local <span>Integración SUNAT pendiente de configurar y validar</span></footer></div>
 {% block scripts %}{% endblock %}</body></html>

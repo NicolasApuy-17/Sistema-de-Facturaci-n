@@ -48,7 +48,8 @@ try:
     command([sys.executable, 'manage.py', 'migrate', '--noinput'])
     command([sys.executable, 'manage.py', 'collectstatic', '--noinput'])
     command([sys.executable, 'manage.py', 'check'])
-    result = command([sys.executable, 'manage.py', 'test', 'core', '--noinput', '--verbosity=2'])
+    labels = sys.argv[1:] or ['core']
+    result = command([sys.executable, 'manage.py', 'test', *labels, '--noinput', '--verbosity=2'])
     print(result.stdout)
     print(result.stderr)
     # Verificar el asistente real en una copia aislada, incluida la separación de roles.

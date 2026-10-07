@@ -21,7 +21,7 @@ def readiness():
     return [
         {'label': 'Datos de la empresa', 'ready': bool(company and company.ruc and company.address and company.ubigeo and company.regime), 'detail': 'Completa RUC, régimen, razón social, dirección y ubigeo.'},
         {'label': 'Respaldo automático', 'ready': backup_ready, 'detail': backup_description},
-        {'label': 'Emisión electrónica CPE y GRE', 'ready': False, 'detail': 'Faltan certificado, credenciales locales, integración y validación de XML/CDR con SUNAT.'},
+        {'label': 'Emisión electrónica CPE y GRE', 'ready': False, 'detail': 'Facturas al contado: firma y envío beta disponibles. Pendientes emisión en producción, validaciones tributarias completas y los flujos de boletas, notas y GRE.'},
         {'label': 'Impuestos de bolsas y otros productos', 'ready': False, 'detail': 'Clasifica afectación al IGV y uso de cada producto. Bolsas alimenticias: revisar el supuesto de envase/inocuidad; no se aplica ICBPER automáticamente. Bolsas para llevar compras: ICBPER pendiente.'},
         {'label': 'Instalación en la computadora de la empresa', 'ready': False, 'detail': 'Uso confirmado en una sola computadora. Pendiente comprobar instalación, inicio automático y restauración en el equipo de destino.'},
     ]

@@ -10,3 +10,7 @@ backup-status.json
 backup-status.tmp
 logs/
 artifacts/
+sunat.local.json
+*.pfx
+*.p12
+*.pem

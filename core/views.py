@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from .forms import AdministratorForm, CompanyForm, CustomerForm, DocumentForm, GuideForm, GuideLineFormSet, LineFormSet, PaymentForm, ProductEditForm, ProductForm, RefundForm, StockForm
-from .models import AuditEvent, Company, Customer, Document, DocumentLine, Guide, Payment, Product, Refund, StockMovement
+from .models import AuditEvent, BetaSubmission, Company, Customer, Document, DocumentLine, Guide, Payment, Product, Refund, StockMovement
 from .services import audit, cancel_draft, create_document, create_guide, edit_product, move_stock, register_note, register_payment, register_refund, register_sale
 
 def balance_expression(): return F('total') + F('debited') - F('credited') - F('paid') + F('refunded')
@@ -137,6 +137,58 @@ def document_xml_preview(request, pk):
     filename = f'PRUEBA-{KINDS[doc.kind][1]}-{preview_id(doc)}.xml'
     response = HttpResponse(content, content_type='application/xml; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Cache-Control'] = 'no-store'
+    return response
+
+@require_POST
+@administrator
+def beta_prepare(request, pk):
+    from .fiscal.workflow import prepare_beta
+    get_object_or_404(Document, pk=pk)
+    try: prepare_beta(pk, request.user)
+    except ValidationError as exc:
+        messages.error(request, ' '.join(exc.messages))
+        return redirect('document_detail', pk=pk)
+    return redirect('beta_detail', pk=pk)
+
+@administrator
+def beta_detail(request, pk):
+    submission = get_object_or_404(BetaSubmission.objects.select_related('document'), document_id=pk)
+    return render(request, 'beta_detail.html', {'submission': submission})
+
+@require_POST
+@administrator
+def beta_send(request, pk):
+    from .fiscal.workflow import submit_beta
+    submission = get_object_or_404(BetaSubmission, document_id=pk)
+    if request.POST.get('confirm') != 'BETA':
+        messages.error(request, 'Confirma que deseas enviar esta prueba al servicio beta de SUNAT.')
+    else:
+        try: submit_beta(submission.pk, request.user, retry=request.POST.get('retry') == 'yes')
+        except ValidationError as exc: messages.error(request, ' '.join(exc.messages))
+    return redirect('beta_detail', pk=pk)
+
+@require_POST
+@administrator
+def beta_recover(request, pk):
+    from .fiscal.workflow import recover_interrupted
+    submission = get_object_or_404(BetaSubmission, document_id=pk)
+    try: recover_interrupted(submission.pk, request.user)
+    except ValidationError as exc: messages.error(request, ' '.join(exc.messages))
+    return redirect('beta_detail', pk=pk)
+
+@administrator
+def beta_download(request, pk, artifact):
+    submission = get_object_or_404(BetaSubmission, document_id=pk)
+    options = {'xml': (submission.signed_xml, submission.filename[:-4] + '.xml', 'application/xml'),
+               'zip': (submission.payload_zip, submission.filename, 'application/zip'),
+               'cdr': (submission.cdr_zip, 'R-' + submission.filename, 'application/zip')}
+    if artifact not in options or options[artifact][0] is None:
+        from django.http import Http404
+        raise Http404
+    content, filename, mime = options[artifact]
+    response = HttpResponse(bytes(content), content_type=mime)
+    response['Content-Disposition'] = f'attachment; filename="BETA-{filename}"'
     response['Cache-Control'] = 'no-store'
     return response
 
